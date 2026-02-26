@@ -1075,60 +1075,91 @@ function scrollToElement(element) {
   const page = document.querySelector('.page.active');
   if (!page || !element) return;
   
-  const rect = element.getBoundingClientRect();
-  const pageRect = page.getBoundingClientRect();
-  const relativeTop = rect.top - pageRect.top + page.scrollTop;
-  // Scrollear más arriba para accounting para la barra de autofill de iOS
-  const offsetPosition = relativeTop - (page.clientHeight * 0.5) + (rect.height / 2);
-  page.scrollTop = Math.max(0, offsetPosition);
+  try {
+    // Método 1: Scroll directo en el contenedor de página
+    const rect = element.getBoundingClientRect();
+    const pageRect = page.getBoundingClientRect();
+    const relativeTop = rect.top - pageRect.top + page.scrollTop;
+    // Scrollear a 50% del viewport para dejar espacio para teclado/autofill
+    const offsetPosition = relativeTop - (page.clientHeight * 0.5) + (rect.height / 2);
+    page.scrollTop = Math.max(0, offsetPosition);
+    
+    // Método 2: Fallback con scrollIntoView
+    setTimeout(() => {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  } catch (e) {
+    console.log('Scroll error:', e);
+  }
 }
 
-let keyboardActive = false;
-let lastViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+function shouldScrollElement(element) {
+  if (!element) return false;
+  const isInput = element.tagName === 'INPUT' && element.type !== 'hidden';
+  const isTextarea = element.tagName === 'TEXTAREA';
+  const isAmtDisplay = element.classList.contains('amt-display');
+  const isDateDisplay = element.classList && element.classList.contains('date-shown');
+  return isInput || isTextarea || isAmtDisplay || isDateDisplay;
+}
 
+let lastViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+let lastWindowHeight = window.innerHeight;
+
+// Detector 1: visualViewport (Chrome, Firefox, Edge)
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', () => {
     const currentHeight = window.visualViewport.height;
     const heightDiff = lastViewportHeight - currentHeight;
     
-    // Detectar si keyboard (o autofill bar) se abrió (cambio > 50px)
     if (heightDiff > 50) {
-      keyboardActive = true;
-      setTimeout(() => {
-        const focused = document.activeElement;
-        if (focused) {
-          const isInput = focused.tagName === 'INPUT' && focused.type !== 'hidden';
-          const isTextarea = focused.tagName === 'TEXTAREA';
-          const isAmtDisplay = focused.classList.contains('amt-display');
-          
-          if (isInput || isTextarea || isAmtDisplay) {
-            scrollToElement(focused);
-          }
-        }
-      }, 300); // Delay más largo para iOS
-    } else if (heightDiff < -50) {
-      keyboardActive = false;
+      const focused = document.activeElement;
+      if (shouldScrollElement(focused)) {
+        setTimeout(() => scrollToElement(focused), 250);
+      }
     }
     
     lastViewportHeight = currentHeight;
   });
 }
 
-// Fallback: detectar focus en inputs y elementos enfocables
-document.addEventListener('focus', (e) => {
-  const target = e.target;
-  if (target) {
-    const isInput = target.tagName === 'INPUT' && target.type !== 'hidden';
-    const isTextarea = target.tagName === 'TEXTAREA';
-    const isAmtDisplay = target.classList.contains('amt-display');
-    
-    if (isInput || isTextarea || isAmtDisplay) {
-      setTimeout(() => {
-        scrollToElement(target);
-      }, 300); // Delay más largo para iOS
+// Detector 2: window resize (PWA mode, fallback)
+window.addEventListener('resize', () => {
+  const currentHeight = window.innerHeight;
+  const heightDiff = lastWindowHeight - currentHeight;
+  
+  if (heightDiff > 80) {
+    const focused = document.activeElement;
+    if (shouldScrollElement(focused)) {
+      setTimeout(() => scrollToElement(focused), 250);
     }
   }
+  
+  lastWindowHeight = currentHeight;
+});
+
+// Detector 3: focus event (todos los navegadores)
+document.addEventListener('focus', (e) => {
+  const target = e.target;
+  if (shouldScrollElement(target)) {
+    setTimeout(() => scrollToElement(target), 250);
+  }
 }, true);
+
+// Detector 4: input event (para Chrome cuando se cambia input mientras está enfocado)
+document.addEventListener('input', (e) => {
+  const target = e.target;
+  if (shouldScrollElement(target)) {
+    setTimeout(() => scrollToElement(target), 150);
+  }
+}, true);
+
+// Detector 5: click en displays (monto, fecha)
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('.amt-display, .date-shown');
+  if (target) {
+    setTimeout(() => scrollToElement(target), 250);
+  }
+});
 
 // ═══════════════════════════════════════════
 // SWIPE NAVIGATION

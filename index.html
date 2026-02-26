@@ -1080,9 +1080,18 @@ if (window.visualViewport) {
       setTimeout(() => {
         const focused = document.activeElement;
         if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.getAttribute('tabindex') === '0')) {
-          focused.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Scroll en el contenedor de la página, no en el elemento
+          const page = document.querySelector('.page.active');
+          if (page) {
+            const rect = focused.getBoundingClientRect();
+            const pageRect = page.getBoundingClientRect();
+            const relativeTop = rect.top - pageRect.top + page.scrollTop;
+            // Calcula scroll para centrar el elemento en la pantalla
+            const offsetPosition = relativeTop - (page.clientHeight / 3) + (rect.height / 2);
+            page.scrollTop = offsetPosition;
+          }
         }
-      }, 150);
+      }, 200);
     }
     lastViewportHeight = currentHeight;
   });
@@ -1093,8 +1102,15 @@ document.addEventListener('focus', (e) => {
   const target = e.target;
   if (target && target.tagName === 'INPUT' && target.type !== 'hidden') {
     setTimeout(() => {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 150);
+      const page = document.querySelector('.page.active');
+      if (page) {
+        const rect = target.getBoundingClientRect();
+        const pageRect = page.getBoundingClientRect();
+        const relativeTop = rect.top - pageRect.top + page.scrollTop;
+        const offsetPosition = relativeTop - (page.clientHeight / 3) + (rect.height / 2);
+        page.scrollTop = offsetPosition;
+      }
+    }, 200);
   }
 }, true);
 

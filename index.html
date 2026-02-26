@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Personal Tracker">
+<meta name="apple-mobile-web-app-title" content="Money Tracker">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="apple-touch-icon" href="logo.png">
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="manifest" href="manifest.json">
-<title>Personal Tracker</title>
+<title>Money Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -332,6 +332,7 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
   padding:13px 15px;outline:none;transition:all .2s;cursor:pointer;
   user-select:none;-webkit-user-select:none;
 }
+.amt-display:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--aglow);}
 .amt-display:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--aglow);}
 .amt-display.zero{color:var(--t3);}
 .date-display-wrap{position:relative;}
@@ -352,6 +353,41 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
   cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;width:100%;margin-top:6px;
 }
 .add-cat-btn:hover{border-color:var(--bh);color:var(--t2);}
+
+/* ── FORM CATEGORY CUSTOM DROPDOWN ── */
+.form-cat-wrap{position:relative;}
+.form-cat-trigger{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);
+  padding:10px 12px;cursor:pointer;transition:border-color .2s;user-select:none;-webkit-user-select:none;
+}
+.form-cat-trigger:hover{border-color:var(--bh);}
+.form-cat-wrap.open .form-cat-trigger{border-color:var(--accent);border-bottom-left-radius:0;border-bottom-right-radius:0;}
+.form-cat-trigger span{font-size:13px;color:var(--text);}
+.form-cat-trigger svg{width:13px;height:13px;color:var(--t3);transition:transform .2s;flex-shrink:0;}
+.form-cat-wrap.open .form-cat-trigger svg{transform:rotate(180deg);}
+.form-cat-panel{
+  position:absolute;top:100%;left:0;right:0;z-index:50;
+  background:var(--bg3);border:1px solid var(--accent);border-top:none;
+  border-bottom-left-radius:var(--rs);border-bottom-right-radius:var(--rs);
+  overflow:hidden;display:none;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+}
+.form-cat-wrap.open .form-cat-panel{display:block;}
+.form-cat-opts{max-height:180px;overflow-y:auto;}
+.form-cat-opt{
+  padding:10px 14px;font-size:13px;color:var(--t2);cursor:pointer;
+  transition:all .12s;border-bottom:1px solid var(--border);
+}
+.form-cat-opt:last-child{border-bottom:none;}
+.form-cat-opt:hover{background:var(--bg4);color:var(--text);}
+.form-cat-opt.selected{color:var(--accent);}
+.form-cat-new{
+  padding:10px 14px;font-size:12px;color:var(--accent);cursor:pointer;
+  display:flex;align-items:center;gap:6px;border-top:1px solid var(--border);
+  transition:background .12s;
+}
+.form-cat-new:hover{background:rgba(59,130,246,.1);}
 .submit-btn{
   width:100%;padding:13px;background:var(--accent);color:#fff;border:none;
   border-radius:var(--rs);font-family:var(--f);font-size:13px;font-weight:700;
@@ -501,7 +537,7 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
 
 <nav>
   <a class="nav-title" onclick="navigate('dashboard')">
-    <span class="dot"></span>Personal Tracker
+    <span class="dot"></span>Money Tracker
   </a>
   <div class="nav-menu">
     <button class="menu-btn" id="menuBtn" onclick="toggleMenu()">
@@ -518,6 +554,13 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
       <div class="di" id="nav-historico" onclick="navigate('historico')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Histórico
       </div>
+      <div class="di" onclick="exportData()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar datos
+      </div>
+      <div class="di" onclick="document.getElementById('importFile').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Importar datos
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
     </div>
   </div>
 </nav>
@@ -694,17 +737,25 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
     </div>
     <div class="field">
       <label>Categoría</label>
-      <select id="catSel"></select>
-      <button class="add-cat-btn" onclick="openCatModal()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Nueva categoría
-      </button>
+      <div class="form-cat-wrap" id="formCatWrap">
+        <div class="form-cat-trigger" id="formCatTrigger" onclick="toggleFormCat()">
+          <span id="formCatLabel">Seleccionar...</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="formCatChev"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="form-cat-panel" id="formCatPanel">
+          <div class="form-cat-opts" id="formCatOpts"></div>
+          <div class="form-cat-new" onclick="openCatModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nueva categoría
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="catSel">
     </div>
     <div class="field">
       <label>Monto</label>
-      <div class="amt-display zero" id="amtDisp" tabindex="0">$0</div>
+      <div class="amt-display zero" id="amtDisp">$0</div>
       <input type="hidden" id="amtVal">
-      <input type="number" id="amtInput" style="position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" inputmode="numeric" min="0">
     </div>
     <div class="field">
       <label>Fecha</label>
@@ -748,9 +799,8 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
     <div class="field"><label>Categoría</label><select id="eCatSel"></select></div>
     <div class="field">
       <label>Monto</label>
-      <div class="amt-display zero" id="eAmtDisp" tabindex="0">$0</div>
+      <div class="amt-display zero" id="eAmtDisp">$0</div>
       <input type="hidden" id="eAmtVal">
-      <input type="number" id="eAmtInput" style="position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" inputmode="numeric" min="0">
     </div>
     <div class="field">
       <label>Fecha</label>
@@ -931,72 +981,86 @@ const PERIOD_LABELS = {
 };
 
 // ═══════════════════════════════════════════
-// AMOUNT CONTROLLER (integer pesos, no decimals)
+// AMOUNT CONTROLLER — overlay input for iOS keyboard
 // ═══════════════════════════════════════════
-function makeAmt(dispId, hidId, inputId) {
+function makeAmt(dispId, hidId, _unused) {
   const disp = document.getElementById(dispId);
   const hid  = document.getElementById(hidId);
-  const inp  = inputId ? document.getElementById(inputId) : null;
   let val = 0;
 
+  // Create a real <input type="tel"> overlaid transparently on disp
+  // iOS needs a real, visible-ish input to trigger its keyboard
+  const ovr = document.createElement('input');
+  ovr.type = 'tel';
+  ovr.inputMode = 'numeric';
+  ovr.pattern = '[0-9]*';
+  ovr.autocomplete = 'off';
+  ovr.autocorrect = 'off';
+  ovr.autocapitalize = 'off';
+  ovr.spellcheck = false;
+  ovr.style.cssText = [
+    'position:absolute','inset:0','width:100%','height:100%',
+    'opacity:0','z-index:2','cursor:pointer',
+    'font-size:16px', // prevents iOS zoom
+    'border:none','background:transparent','outline:none',
+    '-webkit-user-select:none'
+  ].join(';');
+
+  // disp must be positioned for the overlay to work
+  disp.style.position = 'relative';
+  disp.style.overflow = 'hidden';
+  disp.appendChild(ovr);
+
+  function setDispText(txt, zero) {
+    // Remove all child nodes except ovr, then insert text node before ovr
+    [...disp.childNodes].forEach(n => { if (n !== ovr) n.remove(); });
+    disp.insertBefore(document.createTextNode(txt), ovr);
+    disp.classList.toggle('zero', zero);
+  }
+
   function render() {
-    if (val === 0) { disp.textContent='$0'; disp.classList.add('zero'); }
-    else { disp.textContent=fmt(val); disp.classList.remove('zero'); }
+    const txt = val === 0 ? '$0' : fmt(val);
+    setDispText(txt, val === 0);
     hid.value = val;
-    if (inp) inp.value = val;
+    // Clear the real input so iOS doesn't show old value
+    ovr.value = '';
   }
 
-  disp.addEventListener('keydown', e => {
-    if (e.key>='0'&&e.key<='9') {
-      if (val < 99999999) val = val*10 + +e.key;
+  // Physical keyboard (desktop)
+  ovr.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9') {
+      if (val < 99999999) val = val * 10 + +e.key;
       render(); e.preventDefault();
-    } else if (e.key==='Backspace') {
-      val = Math.floor(val/10); render(); e.preventDefault();
-    } else if (e.key==='Delete'||e.key==='Escape') {
-      val=0; render(); e.preventDefault();
+    } else if (e.key === 'Backspace') {
+      val = Math.floor(val / 10); render(); e.preventDefault();
+    } else if (e.key === 'Delete' || e.key === 'Escape') {
+      val = 0; render(); e.preventDefault();
     }
   });
-  
-  disp.addEventListener('click', () => {
-    if (inp) {
-      inp.value = val;
-      inp.focus();
-      inp.click();
-    } else {
-      disp.focus();
-    }
-  });
-  disp.addEventListener('touchstart', () => {
-    if (inp) {
-      inp.value = val;
-      inp.focus();
-      inp.click();
-    } else {
-      disp.focus();
-    }
-  }, {passive:true});
 
-  if (inp) {
-    inp.addEventListener('change', (e) => {
-      const newVal = parseInt(e.target.value) || 0;
-      if (newVal >= 0) {
-        val = newVal;
-        render();
-      }
-    });
-    inp.addEventListener('input', (e) => {
-      const newVal = parseInt(e.target.value) || 0;
-      if (newVal >= 0) {
-        val = newVal;
-        render();
-      }
-    });
-  }
+  // iOS soft keyboard: digits arrive via `input` event
+  ovr.addEventListener('input', () => {
+    const digits = ovr.value.replace(/\D/g, '');
+    for (const ch of digits) {
+      if (val < 99999999) val = val * 10 + parseInt(ch, 10);
+    }
+    render(); // clears ovr.value inside
+  });
+
+  // Scroll the field into view when focused
+  ovr.addEventListener('focus', () => {
+    setTimeout(() => {
+      disp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 320); // after keyboard animation
+  });
+
+  // Initial text
+  setDispText('$0', true);
 
   return {
-    get: () => val,
-    set: v => { val = Math.round(v); render(); },
-    reset: () => { val=0; render(); }
+    get:   ()  => val,
+    set:   v   => { val = Math.round(v); render(); },
+    reset: ()  => { val = 0; render(); }
   };
 }
 
@@ -1025,7 +1089,7 @@ function navigate(page, filter) {
   const ni = document.getElementById('nav-'+page);
   if (ni) ni.classList.add('active');
   document.getElementById('fab').classList.toggle('hidden', page==='add');
-  closeMenu(); closeCatDrop(); closeDashPanel(); closeDesglosePanel();
+  closeMenu(); closeCatDrop(); closeDashPanel(); closeDesglosePanel(); closeFormCat();
 
   if (page==='desglose') {
     if (filter) {
@@ -1069,141 +1133,30 @@ document.addEventListener('click', e=>{
 });
 
 // ═══════════════════════════════════════════
-// KEYBOARD VIEWPORT HANDLER
+// AUTOSCROLL ON FOCUS — keyboard-aware, minimal scroll
 // ═══════════════════════════════════════════
-function scrollToElement(element) {
-  const page = document.querySelector('.page.active');
-  if (!page || !element) return;
-  
-  try {
-    const rect = element.getBoundingClientRect();
-    const pageRect = page.getBoundingClientRect();
-    
-    // Calcular posición relativa al contenedor de página
-    const relativeTop = rect.top - pageRect.top + page.scrollTop;
-    
-    // Scroll muy agresivo: coloca el elemento en el top 20% de la pantalla
-    const targetScroll = relativeTop - (page.clientHeight * 0.2);
-    page.scrollTop = Math.max(0, targetScroll);
-    
-    // Log para debugging
-    console.log('Scroll:', {
-      elementTop: rect.top,
-      pageTop: pageRect.top,
-      relativeTop: relativeTop,
-      targetScroll: targetScroll,
-      pageScrollTop: page.scrollTop,
-      viewportHeight: window.visualViewport?.height || window.innerHeight
-    });
-  } catch (e) {
-    console.log('Scroll error:', e);
-  }
-}
+document.addEventListener('focus', e => {
+  const el = e.target;
+  const page = el.closest('.page.active');
+  if (!page && !el.closest('.modal')) return;
+  if (el.tagName === 'SELECT' || el.type === 'hidden') return;
 
-function shouldScrollElement(element) {
-  if (!element) return false;
-  const isInput = element.tagName === 'INPUT' && element.type !== 'hidden';
-  const isTextarea = element.tagName === 'TEXTAREA';
-  const isAmtDisplay = element.classList && element.classList.contains('amt-display');
-  const isDateDisplay = element.classList && element.classList.contains('date-shown');
-  return isInput || isTextarea || isAmtDisplay || isDateDisplay;
-}
+  setTimeout(() => {
+    // Use visualViewport to know actual height after keyboard appears.
+    // On iOS PWA: visualViewport.height shrinks when keyboard is open.
+    const visH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const rect  = el.getBoundingClientRect();
+    const buffer = 56; // breathing room between element and keyboard top
 
-let lastViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-let lastWindowHeight = window.innerHeight;
-let scrollTimeout;
-
-// Función para hacer scroll con reintentos
-function aggressiveScroll(element) {
-  clearTimeout(scrollTimeout);
-  
-  // Intento 1: inmediato
-  scrollToElement(element);
-  
-  // Intento 2: 100ms
-  scrollTimeout = setTimeout(() => scrollToElement(element), 100);
-  
-  // Intento 3: 200ms
-  scrollTimeout = setTimeout(() => scrollToElement(element), 200);
-  
-  // Intento 4: 400ms (después que anima el teclado)
-  scrollTimeout = setTimeout(() => scrollToElement(element), 400);
-}
-
-// Detector 1: visualViewport (Chrome, Firefox, Edge)
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => {
-    const currentHeight = window.visualViewport.height;
-    const heightDiff = lastViewportHeight - currentHeight;
-    
-    if (heightDiff > 50) {
-      const focused = document.activeElement;
-      if (shouldScrollElement(focused)) {
-        aggressiveScroll(focused);
-      }
+    if (rect.bottom + buffer > visH) {
+      // Element is hidden or too close to keyboard — scroll the page container
+      // just enough to bring it into view.
+      const excess = rect.bottom + buffer - visH;
+      if (page) page.scrollTop += excess;
     }
-    
-    lastViewportHeight = currentHeight;
-  });
-}
-
-// Detector 2: window resize (PWA mode PRIMARY, mejor que visualViewport en iOS PWA)
-window.addEventListener('resize', () => {
-  const currentHeight = window.innerHeight;
-  const heightDiff = lastWindowHeight - currentHeight;
-  
-  // PWA en mobile: cambio > 50px indica keyboard/autofill
-  if (heightDiff > 50) {
-    const focused = document.activeElement;
-    if (shouldScrollElement(focused)) {
-      console.log('PWA Resize detected:', heightDiff);
-      aggressiveScroll(focused);
-    }
-  }
-  
-  lastWindowHeight = currentHeight;
-});
-
-// Detector 3: focus event (todos los navegadores, especialmente importante en PWA)
-document.addEventListener('focus', (e) => {
-  const target = e.target;
-  if (shouldScrollElement(target)) {
-    console.log('Focus detected on:', target.className || target.tagName);
-    aggressiveScroll(target);
-  }
+    // If already fully visible: do nothing (fixes the Desglose over-scroll)
+  }, 340);
 }, true);
-
-// Detector 4: input event (para Chrome cuando se cambia input mientras está enfocado)
-document.addEventListener('input', (e) => {
-  const target = e.target;
-  if (shouldScrollElement(target)) {
-    setTimeout(() => scrollToElement(target), 150);
-  }
-}, true);
-
-// Detector 5: click en displays (monto, fecha)
-document.addEventListener('click', (e) => {
-  const target = e.target.closest('.amt-display, .date-shown');
-  if (target) {
-    aggressiveScroll(target);
-  }
-});
-
-// Detector 6: PWA specific - monitorear continuamente visibility del elemento enfocado
-setInterval(() => {
-  const focused = document.activeElement;
-  if (shouldScrollElement(focused)) {
-    const rect = focused.getBoundingClientRect();
-    const page = document.querySelector('.page.active');
-    if (page) {
-      // Si el elemento está fuera del viewport visible (muy bajo, ocultado por teclado)
-      if (rect.bottom > window.innerHeight - 100) {
-        console.log('PWA: Element below viewport, auto-scrolling');
-        scrollToElement(focused);
-      }
-    }
-  }
-}, 300);
 
 // ═══════════════════════════════════════════
 // SWIPE NAVIGATION
@@ -1446,14 +1399,55 @@ function setType(t) {
   curType = t;
   document.getElementById('btnInc').className='type-btn'+(t==='income'?' active income':'');
   document.getElementById('btnExp').className='type-btn'+(t==='expense'?' active expense':'');
-  document.getElementById('descField').style.display = t==='expense'?'block':'none';
   fillSel('catSel', t);
 }
 let curType = 'income';
 
+// ── Custom form-cat dropdown helpers ──────────────────────────────
+let formCatOpen = false;
+let formCatValue = '';
+
+function toggleFormCat() {
+  formCatOpen = !formCatOpen;
+  document.getElementById('formCatWrap').classList.toggle('open', formCatOpen);
+}
+function closeFormCat() {
+  formCatOpen = false;
+  document.getElementById('formCatWrap').classList.remove('open');
+}
+function renderFormCatOpts(type) {
+  const cats = getAllCats()[type];
+  // default selection: keep current if still in list, else first
+  if (!cats.includes(formCatValue)) formCatValue = cats[0] || '';
+  document.getElementById('catSel').value = formCatValue;
+  document.getElementById('formCatLabel').textContent = formCatValue || 'Seleccionar...';
+  document.getElementById('formCatOpts').innerHTML = cats.map(c =>
+    `<div class="form-cat-opt${c===formCatValue?' selected':''}" onclick="pickFormCat('${c.replace(/'/g,"\\'")}')">${c}</div>`
+  ).join('');
+}
+function pickFormCat(cat) {
+  formCatValue = cat;
+  document.getElementById('catSel').value = cat;
+  document.getElementById('formCatLabel').textContent = cat;
+  // re-render opts to update .selected
+  renderFormCatOpts(curType);
+  closeFormCat();
+}
+
+// Close form-cat dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#formCatWrap') && formCatOpen) closeFormCat();
+});
+
 function fillSel(id, type) {
-  const cats = getAllCats();
-  document.getElementById(id).innerHTML = cats[type].map(c=>`<option value="${c}">${c}</option>`).join('');
+  if (id === 'catSel') {
+    // Custom dropdown
+    renderFormCatOpts(type);
+  } else {
+    // Native <select> (edit modal)
+    const cats = getAllCats();
+    document.getElementById(id).innerHTML = cats[type].map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
 }
 
 function saveTx() {
@@ -1464,7 +1458,7 @@ function saveTx() {
   if (!amt||amt<=0) { shake('amtDisp'); return; }
   if (!date)        { shake('dateInp'); return; }
 
-  const tx = { id:Date.now(), type:curType, category:cat, amount:amt, date, desc:curType==='expense'?desc:'' };
+  const tx = { id:Date.now(), type:curType, category:cat, amount:amt, date, desc };
   txs.unshift(tx);
   save();
 
@@ -1501,7 +1495,6 @@ function openEdit(id) {
   editId=id; editType=tx.type;
   document.getElementById('eBtnInc').className='type-btn'+(tx.type==='income'?' active income':'');
   document.getElementById('eBtnExp').className='type-btn'+(tx.type==='expense'?' active expense':'');
-  document.getElementById('eDescField').style.display=tx.type==='expense'?'block':'none';
   fillSel('eCatSel', tx.type);
   document.getElementById('eCatSel').value=tx.category;
   eAC.set(tx.amount);
@@ -1521,7 +1514,6 @@ function setEditType(t) {
   editType=t;
   document.getElementById('eBtnInc').className='type-btn'+(t==='income'?' active income':'');
   document.getElementById('eBtnExp').className='type-btn'+(t==='expense'?' active expense':'');
-  document.getElementById('eDescField').style.display=t==='expense'?'block':'none';
   fillSel('eCatSel',t);
 }
 function saveEdit() {
@@ -1533,7 +1525,7 @@ function saveEdit() {
   if (!date)        { shake('eDateInp'); return; }
   const idx=txs.findIndex(t=>t.id===editId);
   if (idx!==-1) {
-    txs[idx]={...txs[idx],type:editType,category:cat,amount:amt,date,desc:editType==='expense'?desc:''};
+    txs[idx]={...txs[idx],type:editType,category:cat,amount:amt,date,desc};
     save();
   }
   closeEdit(); renderAll(); showToast('Actualizada');
@@ -1550,6 +1542,7 @@ function deleteTx(id) {
 // CUSTOM CATEGORIES
 // ═══════════════════════════════════════════
 function openCatModal() {
+  closeFormCat();
   ncType=curType; setNCType(curType);
   document.getElementById('ncName').value='';
   document.getElementById('catCtrModal').classList.add('open');
@@ -1569,9 +1562,13 @@ function saveNewCat() {
   customCats[ncType].push(name);
   saveCats();
   closeCatModal();
-  fillSel('catSel',curType);
+  // Update form cat dropdown
+  if (ncType===curType) {
+    formCatValue = name;
+    renderFormCatOpts(curType);
+  }
+  // Update edit modal select
   fillSel('eCatSel',editType);
-  if (ncType===curType) document.getElementById('catSel').value=name;
   showToast('Categoría creada: '+name);
 }
 
@@ -1630,6 +1627,12 @@ function renderAll() {
 // ═══════════════════════════════════════════
 function renderDashboard() {
   const { start, end } = getPeriodRange(dashMode, dashCustFrom, dashCustTo);
+
+  // Always keep date range display in sync
+  if (dashMode !== 'custom') {
+    document.getElementById('dashPeriodDateRange').textContent = fmtDate(start)+' – '+fmtDate(end);
+  }
+
   const period = txs.filter(t=>inRange(t,start,end));
   const inc = period.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const exp = period.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
@@ -1662,7 +1665,17 @@ function renderDonut(periodTxs) {
   const exp = periodTxs.filter(t=>t.type==='expense');
 
   if (!exp.length) {
-    const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,200,200);
+    const dpr = window.devicePixelRatio || 1;
+    const SIZE = 200;
+    if (canvas._dpr !== dpr) {
+      canvas._dpr = dpr;
+      canvas.width  = SIZE * dpr;
+      canvas.height = SIZE * dpr;
+      canvas.style.width  = SIZE + 'px';
+      canvas.style.height = SIZE + 'px';
+      canvas.getContext('2d').scale(dpr, dpr);
+    }
+    const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,SIZE,SIZE);
     // Draw empty ring
     ctx.beginPath(); ctx.arc(100,100,82,0,Math.PI*2);
     ctx.lineWidth=22; ctx.strokeStyle='#1e1e28'; ctx.stroke();
@@ -1700,13 +1713,31 @@ function renderDonut(periodTxs) {
     hoveredSlice=idx; drawDonut(idx); buildBars(idx);
   };
   canvas.onmouseleave = () => { hoveredSlice=-1; drawDonut(-1); buildBars(-1); };
+  // Click slice → navigate to Desglose filtered by that category
+  canvas.onclick = e => {
+    const idx = getDonutSliceAt(e.clientX, e.clientY);
+    if (idx >= 0) navigateToDesgloseCat(donutEntries[idx].cat);
+  };
 }
 
 function drawDonut(highlighted) {
   const canvas = document.getElementById('donutCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const cx=100, cy=100, r=82, ri=58, lw=24;
+
+  // HiDPI / Retina fix: scale canvas buffer by devicePixelRatio
+  const dpr = window.devicePixelRatio || 1;
+  const SIZE = 200;
+  if (canvas._dpr !== dpr) {
+    canvas._dpr = dpr;
+    canvas.width  = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    canvas.style.width  = SIZE + 'px';
+    canvas.style.height = SIZE + 'px';
+    ctx.scale(dpr, dpr);
+  }
+
+  const cx=100, cy=100, r=82, ri=58;
   ctx.clearRect(0,0,200,200);
 
   if (!donutEntries.length) return;
@@ -1783,7 +1814,8 @@ function buildBars(highlighted) {
     const isHov = i===highlighted;
     const isDim = highlighted!==-1 && !isHov;
     return `<div class="dbar-row${isHov?' hovered':''}${isDim?' dimmed':''}" 
-      onmouseover="hoverBar(${i})" onmouseleave="unhoverBar()">
+      onmouseover="hoverBar(${i})" onmouseleave="unhoverBar()"
+      onclick="navigateToDesgloseCat('${cat.replace(/'/g,"\\'")}')" style="cursor:pointer">
       <div class="dbar-top">
         <div class="dbar-dot" style="background:${color}"></div>
         <span class="dbar-name">${cat}</span>
@@ -1804,6 +1836,20 @@ function hoverBar(i) {
 }
 function unhoverBar() {
   hoveredSlice=-1; drawDonut(-1); buildBars(-1);
+}
+
+function navigateToDesgloseCat(cat) {
+  // Reset desglose to current period, expense only, filtered by this category
+  desgloseType = 'expense';
+  desgloseMode = 'current';
+  desglCustFrom = ''; desglCustTo = '';
+  desgloseCatSels = [cat];
+  // Update tab buttons
+  ['all','income','expense'].forEach(f=>{
+    const t=document.getElementById('dtab-'+f);
+    if(t) t.className='type-tab'+(f==='expense'?' active exp':'');
+  });
+  navigate('desglose');
 }
 
 // ═══════════════════════════════════════════
@@ -1936,6 +1982,50 @@ function renderHistorico() {
 }
 
 // ═══════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════
+function exportData() {
+  closeMenu();
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    txs,
+    customCats,
+    fiscalDay
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `money-tracker-${date}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Datos exportados ✓');
+}
+
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.txs)) throw new Error('Formato inválido');
+      if (!confirm(`¿Importar ${data.txs.length} transacciones? Esto reemplazará los datos actuales.`)) return;
+      txs = data.txs;
+      if (data.customCats) customCats = data.customCats;
+      if (data.fiscalDay)  fiscalDay  = data.fiscalDay;
+      save(); saveCats();
+      localStorage.setItem('pt_fiscalDay', fiscalDay);
+      renderAll(); renderHistorico();
+      showToast('Importación exitosa ✓');
+    } catch(err) {
+      alert('Error al importar: ' + err.message);
+    }
+    e.target.value = ''; // reset so same file can be re-imported
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════════
 let toastTmr;
@@ -1960,8 +2050,8 @@ for(let d=1;d<=28;d++){
 }
 
 // Amount controllers
-AC  = makeAmt('amtDisp',  'amtVal',  'amtInput');
-eAC = makeAmt('eAmtDisp', 'eAmtVal', 'eAmtInput');
+AC  = makeAmt('amtDisp',  'amtVal');
+eAC = makeAmt('eAmtDisp', 'eAmtVal');
 
 // Init form
 setType('income');

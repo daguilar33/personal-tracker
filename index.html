@@ -1076,18 +1076,25 @@ function scrollToElement(element) {
   if (!page || !element) return;
   
   try {
-    // Método 1: Scroll directo en el contenedor de página
     const rect = element.getBoundingClientRect();
     const pageRect = page.getBoundingClientRect();
-    const relativeTop = rect.top - pageRect.top + page.scrollTop;
-    // Scrollear a 50% del viewport para dejar espacio para teclado/autofill
-    const offsetPosition = relativeTop - (page.clientHeight * 0.5) + (rect.height / 2);
-    page.scrollTop = Math.max(0, offsetPosition);
     
-    // Método 2: Fallback con scrollIntoView
-    setTimeout(() => {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
+    // Calcular posición relativa al contenedor de página
+    const relativeTop = rect.top - pageRect.top + page.scrollTop;
+    
+    // Scroll muy agresivo: coloca el elemento en el top 20% de la pantalla
+    const targetScroll = relativeTop - (page.clientHeight * 0.2);
+    page.scrollTop = Math.max(0, targetScroll);
+    
+    // Log para debugging
+    console.log('Scroll:', {
+      elementTop: rect.top,
+      pageTop: pageRect.top,
+      relativeTop: relativeTop,
+      targetScroll: targetScroll,
+      pageScrollTop: page.scrollTop,
+      viewportHeight: window.visualViewport?.height || window.innerHeight
+    });
   } catch (e) {
     console.log('Scroll error:', e);
   }
@@ -1097,13 +1104,31 @@ function shouldScrollElement(element) {
   if (!element) return false;
   const isInput = element.tagName === 'INPUT' && element.type !== 'hidden';
   const isTextarea = element.tagName === 'TEXTAREA';
-  const isAmtDisplay = element.classList.contains('amt-display');
+  const isAmtDisplay = element.classList && element.classList.contains('amt-display');
   const isDateDisplay = element.classList && element.classList.contains('date-shown');
   return isInput || isTextarea || isAmtDisplay || isDateDisplay;
 }
 
 let lastViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 let lastWindowHeight = window.innerHeight;
+let scrollTimeout;
+
+// Función para hacer scroll con reintentos
+function aggressiveScroll(element) {
+  clearTimeout(scrollTimeout);
+  
+  // Intento 1: inmediato
+  scrollToElement(element);
+  
+  // Intento 2: 100ms
+  scrollTimeout = setTimeout(() => scrollToElement(element), 100);
+  
+  // Intento 3: 200ms
+  scrollTimeout = setTimeout(() => scrollToElement(element), 200);
+  
+  // Intento 4: 400ms (después que anima el teclado)
+  scrollTimeout = setTimeout(() => scrollToElement(element), 400);
+}
 
 // Detector 1: visualViewport (Chrome, Firefox, Edge)
 if (window.visualViewport) {
@@ -1114,7 +1139,7 @@ if (window.visualViewport) {
     if (heightDiff > 50) {
       const focused = document.activeElement;
       if (shouldScrollElement(focused)) {
-        setTimeout(() => scrollToElement(focused), 250);
+        aggressiveScroll(focused);
       }
     }
     
@@ -1130,7 +1155,7 @@ window.addEventListener('resize', () => {
   if (heightDiff > 80) {
     const focused = document.activeElement;
     if (shouldScrollElement(focused)) {
-      setTimeout(() => scrollToElement(focused), 250);
+      aggressiveScroll(focused);
     }
   }
   
@@ -1141,7 +1166,7 @@ window.addEventListener('resize', () => {
 document.addEventListener('focus', (e) => {
   const target = e.target;
   if (shouldScrollElement(target)) {
-    setTimeout(() => scrollToElement(target), 250);
+    aggressiveScroll(target);
   }
 }, true);
 
@@ -1157,7 +1182,7 @@ document.addEventListener('input', (e) => {
 document.addEventListener('click', (e) => {
   const target = e.target.closest('.amt-display, .date-shown');
   if (target) {
-    setTimeout(() => scrollToElement(target), 250);
+    aggressiveScroll(target);
   }
 });
 

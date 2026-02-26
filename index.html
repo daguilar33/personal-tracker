@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Personal Tracker">
+<meta name="theme-color" content="#0a0a0f">
+
+<link rel="apple-touch-icon" href="https://via.placeholder.com/180/3b82f6/ffffff?text=PT">
+<link rel="icon" type="image/png" href="https://via.placeholder.com/32/3b82f6/ffffff?text=PT">
+
+<title>Personal Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:#0a0a0f; --bg2:#111118; --bg3:#18181f; --bg4:#1e1e28;
+  --border:rgba(255,255,255,0.07); --bh:rgba(255,255,255,0.13);
+  --text:#e8e8f0; --t2:#9090a8; --t3:#5a5a72;
+  --accent:#3b82f6; --aglow:rgba(59,130,246,0.22);
+  --green:#22c55e; --gdim:rgba(34,197,94,0.12);
+  --red:#ef4444;   --rdim:rgba(239,68,68,0.12);
+  --yellow:#eab308;
+  --f:'JetBrains Mono',monospace;
+  --r:14px; --rs:8px;
+  --safe-b:env(safe-area-inset-bottom, 0px);
+  --safe-t:env(safe-area-inset-top, 0px);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+body{
+    font-family:var(--f);
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+}
+
+/* Mejora 1: Ajuste de Navegación para el Notch */
+nav {
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:100;
+  background:rgba(10,10,15,0.9);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding: var(--safe-t) 16px 0 16px; /* Espacio para el Notch */
+  height: calc(60px + var(--safe-t));
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+main {
+    padding-top: calc(60px + var(--safe-t));
+    min-height: 100vh;
+}
+
+.nav-title {
+  font-size:18px;
+  font-weight:700;
+  color:var(--text);
+  text-decoration:none;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.nav-title .dot {
+  width:8px;height:8px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 10px var(--accent);
+}
+
+.page {
+    display:none;
+    padding:20px 16px calc(90px + var(--safe-b));
+    max-width:480px;
+    margin:0 auto;
+    animation:fadeUp .3s ease;
+}
+.page.active {display:block;}
+
+/* Mejora 2: Estilos para el Input Numérico */
+.amt-input-container {
+    position: relative;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.real-amt-input {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--f);
+    font-size: 48px;
+    font-weight: 700;
+    width: 100%;
+    text-align: center;
+    outline: none;
+    caret-color: var(--accent);
+}
+
+/* Mejora 4: Estilo de Tarjetas sin texto "Ver desglose" */
+.balance-item {
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:15px;
+  cursor:pointer;
+  transition:all .2s;
+  display: flex;
+  flex-direction: column;
+}
+.balance-item:active {transform: scale(0.97); background:rgba(255,255,255,.08);}
+
+.tx-card {
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:12px;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+/* ... (Resto de estilos básicos para que la app funcione) */
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    width: 100%;
+    font-weight: 600;
+    font-family: var(--f);
+    margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-title">
+    <div class="dot"></div>
+    Personal Tracker
+  </div>
+  <div class="menu-btn" onclick="toggleMenu()">Menú</div>
+</nav>
+
+<main id="swipe-area">
+    <div id="page-home" class="page active">
+        <div class="balance-card">
+            <div style="font-size:12px; color:var(--t3)">BALANCE TOTAL</div>
+            <div style="font-size:36px; font-weight:700; margin:10px 0">$ 2.450.00</div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="balance-item" onclick="showTab('desglose')">
+                    <span style="font-size:10px; color:var(--green)">▲ INGRESOS</span>
+                    <span style="font-size:18px; font-weight:700">$ 5.000</span>
+                </div>
+                <div class="balance-item" onclick="showTab('desglose')">
+                    <span style="font-size:10px; color:var(--red)">▼ GASTOS</span>
+                    <span style="font-size:18px; font-weight:700">$ 2.550</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="showTab('add')">+ Agregar Movimiento</button>
+    </div>
+
+    <div id="page-add" class="page">
+        <h2>Nuevo Registro</h2>
+        <div class="amt-input-container">
+            <input type="number" 
+                   step="0.01" 
+                   inputmode="decimal" 
+                   placeholder="0.00" 
+                   class="real-amt-input" 
+                   id="main-amount">
+        </div>
+        <button class="btn-primary" onclick="showTab('home')">Guardar</button>
+    </div>
+
+    <div id="page-desglose" class="page">
+        <h2>Desglose</h2>
+        <p style="color:var(--t3)">Aquí verás el detalle de tus cuentas.</p>
+    </div>
+</main>
+
+<script>
+// Sistema de cambio de pestañas
+function showTab(tabId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + tabId);
+    if(target) target.classList.add('active');
+    
+    // Mejora 2: Enfocar el teclado automáticamente en la vista de agregar
+    if(tabId === 'add') {
+        setTimeout(() => document.getElementById('main-amount').focus(), 300);
+    }
+}
+
+// Mejora 3: Navegación por Gestos (Swipe)
+let touchstartX = 0;
+let touchendX = 0;
+const tabs = ['home', 'desglose', 'add']; // Orden de las pestañas
+let currentTabIndex = 0;
+
+function handleGesture() {
+    if (touchendX < touchstartX - 70) {
+        // Swipe Izquierda -> Siguiente
+        if (currentTabIndex < tabs.length - 1) {
+            currentTabIndex++;
+            showTab(tabs[currentTabIndex]);
+        }
+    }
+    if (touchendX > touchstartX + 70) {
+        // Swipe Derecha -> Anterior
+        if (currentTabIndex > 0) {
+            currentTabIndex--;
+            showTab(tabs[currentTabIndex]);
+        }
+    }
+}
+
+document.getElementById('swipe-area').addEventListener('touchstart', e => {
+    touchstartX = e.changedTouches[0].screenX;
+});
+
+document.getElementById('swipe-area').addEventListener('touchend', e => {
+    touchendX = e.changedTouches[0].screenX;
+    handleGesture();
+});
+
+function toggleMenu() {
+    alert("Menú abierto (aquí puedes poner tu lógica de dropdown)");
+}
+</script>
+
+</body>
+</html>

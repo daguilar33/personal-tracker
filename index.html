@@ -83,7 +83,7 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-.page-hero{padding:20px 0 12px;}
+.page-hero{padding:40px 0 12px;}
 .page-hero-lbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
 .page-hero-title{font-size:clamp(26px,7vw,32px);font-weight:700;letter-spacing:-1px;}
 .page-hero-title .g{color:var(--green);}
@@ -962,6 +962,10 @@ function makeAmt(dispId, hidId, inputId) {
       inp.value = val;
       inp.focus();
       inp.click();
+      // Scroll automático cuando se abre el teclado
+      setTimeout(() => {
+        disp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     } else {
       disp.focus();
     }
@@ -971,6 +975,10 @@ function makeAmt(dispId, hidId, inputId) {
       inp.value = val;
       inp.focus();
       inp.click();
+      // Scroll automático cuando se abre el teclado
+      setTimeout(() => {
+        disp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     } else {
       disp.focus();
     }
@@ -1189,6 +1197,8 @@ function setDesglosePeriod(mode, el) {
   el.classList.add('active');
   document.getElementById('desglosePeriodLabel').textContent = PERIOD_LABELS[mode];
   document.getElementById('desgloseCustomRangeInputs').style.display = mode==='custom'?'block':'none';
+  // Ocultar rango de fechas no editable en modo custom
+  document.getElementById('desgloseRangeDisplay').parentElement.style.display = mode==='custom'?'none':'block';
   
   // Actualizar rango de fechas
   if (mode !== 'custom') {
@@ -1291,6 +1301,7 @@ function clearDesgloseFilters() {
   document.querySelectorAll('#desglosePeriodPanel .period-opt').forEach(o=>o.classList.remove('active'));
   document.getElementById('dopt2-current')?.classList.add('active');
   document.getElementById('desgloseCustomRangeInputs').style.display='none';
+  document.getElementById('desgloseRangeDisplay').parentElement.style.display='block';
   closeCatDrop(); closeDesglosePanel();
   // Actualizar rango de fechas
   const { start, end } = getPeriodRange('current', '', '');

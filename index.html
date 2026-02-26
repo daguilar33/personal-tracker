@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Personal Tracker">
@@ -1078,34 +1078,43 @@ function scrollToElement(element) {
   const rect = element.getBoundingClientRect();
   const pageRect = page.getBoundingClientRect();
   const relativeTop = rect.top - pageRect.top + page.scrollTop;
-  const offsetPosition = relativeTop - (page.clientHeight / 3) + (rect.height / 2);
-  page.scrollTop = offsetPosition;
+  // Scrollear más arriba para accounting para la barra de autofill de iOS
+  const offsetPosition = relativeTop - (page.clientHeight * 0.5) + (rect.height / 2);
+  page.scrollTop = Math.max(0, offsetPosition);
 }
 
+let keyboardActive = false;
+let lastViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
 if (window.visualViewport) {
-  let lastViewportHeight = window.visualViewport.height;
   window.visualViewport.addEventListener('resize', () => {
     const currentHeight = window.visualViewport.height;
-    // Si la altura del viewport disminuyó, el teclado se abrió
-    if (currentHeight < lastViewportHeight) {
+    const heightDiff = lastViewportHeight - currentHeight;
+    
+    // Detectar si keyboard (o autofill bar) se abrió (cambio > 50px)
+    if (heightDiff > 50) {
+      keyboardActive = true;
       setTimeout(() => {
         const focused = document.activeElement;
         if (focused) {
-          // Detectar: INPUT, TEXTAREA, o elemento con tabindex (como amt-display)
-          if (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA') {
-            scrollToElement(focused);
-          } else if (focused.getAttribute('tabindex') === '0' && focused.classList.contains('amt-display')) {
-            // Para amt-display, scrollear su posición
+          const isInput = focused.tagName === 'INPUT' && focused.type !== 'hidden';
+          const isTextarea = focused.tagName === 'TEXTAREA';
+          const isAmtDisplay = focused.classList.contains('amt-display');
+          
+          if (isInput || isTextarea || isAmtDisplay) {
             scrollToElement(focused);
           }
         }
-      }, 200);
+      }, 300); // Delay más largo para iOS
+    } else if (heightDiff < -50) {
+      keyboardActive = false;
     }
+    
     lastViewportHeight = currentHeight;
   });
 }
 
-// Fallback: detectar focus en inputs y elementos enfocables para teclados que no disparan visualViewport
+// Fallback: detectar focus en inputs y elementos enfocables
 document.addEventListener('focus', (e) => {
   const target = e.target;
   if (target) {
@@ -1116,7 +1125,7 @@ document.addEventListener('focus', (e) => {
     if (isInput || isTextarea || isAmtDisplay) {
       setTimeout(() => {
         scrollToElement(target);
-      }, 200);
+      }, 300); // Delay más largo para iOS
     }
   }
 }, true);

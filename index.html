@@ -695,8 +695,9 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
     </div>
     <div class="field">
       <label>Monto</label>
-      <div class="amt-display zero" id="amtDisp" tabindex="0" inputmode="numeric">$0</div>
+      <div class="amt-display zero" id="amtDisp" tabindex="0">$0</div>
       <input type="hidden" id="amtVal">
+      <input type="number" id="amtInput" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" inputmode="numeric" min="0">
     </div>
     <div class="field">
       <label>Fecha</label>
@@ -740,8 +741,9 @@ main{padding-top:calc(60px + env(safe-area-inset-top,0));min-height:100vh;positi
     <div class="field"><label>Categoría</label><select id="eCatSel"></select></div>
     <div class="field">
       <label>Monto</label>
-      <div class="amt-display zero" id="eAmtDisp" tabindex="0" inputmode="numeric">$0</div>
+      <div class="amt-display zero" id="eAmtDisp" tabindex="0">$0</div>
       <input type="hidden" id="eAmtVal">
+      <input type="number" id="eAmtInput" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" inputmode="numeric" min="0">
     </div>
     <div class="field">
       <label>Fecha</label>
@@ -924,15 +926,17 @@ const PERIOD_LABELS = {
 // ═══════════════════════════════════════════
 // AMOUNT CONTROLLER (integer pesos, no decimals)
 // ═══════════════════════════════════════════
-function makeAmt(dispId, hidId) {
+function makeAmt(dispId, hidId, inputId) {
   const disp = document.getElementById(dispId);
   const hid  = document.getElementById(hidId);
+  const inp  = inputId ? document.getElementById(inputId) : null;
   let val = 0;
 
   function render() {
     if (val === 0) { disp.textContent='$0'; disp.classList.add('zero'); }
     else { disp.textContent=fmt(val); disp.classList.remove('zero'); }
     hid.value = val;
+    if (inp) inp.value = val;
   }
 
   disp.addEventListener('keydown', e => {
@@ -945,8 +949,42 @@ function makeAmt(dispId, hidId) {
       val=0; render(); e.preventDefault();
     }
   });
-  disp.addEventListener('click', () => disp.focus());
-  disp.addEventListener('touchstart', () => disp.focus(), {passive:true});
+  
+  disp.addEventListener('click', () => {
+    if (inp) {
+      inp.value = val;
+      inp.focus();
+      inp.click();
+    } else {
+      disp.focus();
+    }
+  });
+  disp.addEventListener('touchstart', () => {
+    if (inp) {
+      inp.value = val;
+      inp.focus();
+      inp.click();
+    } else {
+      disp.focus();
+    }
+  }, {passive:true});
+
+  if (inp) {
+    inp.addEventListener('change', (e) => {
+      const newVal = parseInt(e.target.value) || 0;
+      if (newVal >= 0) {
+        val = newVal;
+        render();
+      }
+    });
+    inp.addEventListener('input', (e) => {
+      const newVal = parseInt(e.target.value) || 0;
+      if (newVal >= 0) {
+        val = newVal;
+        render();
+      }
+    });
+  }
 
   return {
     get: () => val,
@@ -1721,8 +1759,8 @@ for(let d=1;d<=28;d++){
 }
 
 // Amount controllers
-AC  = makeAmt('amtDisp',  'amtVal');
-eAC = makeAmt('eAmtDisp', 'eAmtVal');
+AC  = makeAmt('amtDisp',  'amtVal',  'amtInput');
+eAC = makeAmt('eAmtDisp', 'eAmtVal', 'eAmtInput');
 
 // Init form
 setType('income');
